@@ -1,27 +1,65 @@
+import { useState } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import Index from "./pages/Index";
-import NotFound from "./pages/NotFound";
+import LoginScreen from "./components/LoginScreen";
+import Navigation from "./components/Navigation";
+import Home from "./pages/Home";
+import Profile from "./pages/Profile";
+import Settings from "./pages/Settings";
 
 const queryClient = new QueryClient();
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Index />} />
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </BrowserRouter>
-    </TooltipProvider>
-  </QueryClientProvider>
-);
+const App = () => {
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [userRole, setUserRole] = useState<'user' | 'admin'>('user');
+  const [currentPage, setCurrentPage] = useState('home');
+
+  const handleLogin = (role: 'user' | 'admin') => {
+    setUserRole(role);
+    setIsLoggedIn(true);
+    setCurrentPage('home');
+  };
+
+  const handleLogout = () => {
+    setIsLoggedIn(false);
+    setCurrentPage('home');
+  };
+
+  const renderCurrentPage = () => {
+    switch (currentPage) {
+      case 'home':
+        return <Home userRole={userRole} onLogout={handleLogout} />;
+      case 'profile':
+        return <Profile userRole={userRole} />;
+      case 'settings':
+        return <Settings userRole={userRole} onLogout={handleLogout} />;
+      default:
+        return <Home userRole={userRole} onLogout={handleLogout} />;
+    }
+  };
+
+  return (
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        {!isLoggedIn ? (
+          <LoginScreen onLogin={handleLogin} />
+        ) : (
+          <>
+            {renderCurrentPage()}
+            <Navigation
+              currentPage={currentPage}
+              onNavigate={setCurrentPage}
+              userRole={userRole}
+            />
+          </>
+        )}
+      </TooltipProvider>
+    </QueryClientProvider>
+  );
+};
 
 export default App;
